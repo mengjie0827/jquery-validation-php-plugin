@@ -2,18 +2,106 @@
 /**
  * Validates input arrays (such as POST)
  *
+ * Copyright (c) 2009 Yes2web - Internet Solutions Permission is hereby granted, free of charge, to any 
+ * person obtaining a copy of this software and associated documentation files (the "Software"), to deal 
+ * in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+ * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the 
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial 
+ * portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
+ * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN 
+ * NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * @license MIT
  * @package validator
  */
+
+/**
+ * Validator class
+ * 
+ * Main class for validation, based on and influenced by the jQuery validation plugin available 
+ * at http://bassistance.de/jquery-plugins/jquery-plugin-validation/.
+ *
+ * @package validator
+ * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+ */
 class Validator {
+	/**
+	 * Collection of validation methods
+	 * @var ValidationMethodCollection
+	 */
 	protected $oMethodCollection;
+	/**
+	 * List of lists of rules associated with fields
+	 * @param String[][] [field_name => [rule_name => callback]] 
+	 */
 	protected $asClassRule = array();
-	protected $asMessage = array('required' => 'This is a required field');
+	/**
+	 * List of messages associated with rules.
+	 * Set in construct, extendMessages
+	 * 
+	 * @see Validator->__construct()
+	 * @see Validator->extendMessages()
+	 * @see Validator->getMessage()
+	 * @var String[] [rule_name => message]
+	 */
+	protected $asMessage = array(
+							'required' => 'This is a required field',
+							'required' => 'This field is required.',
+							'remote' => 'Please fix this field.',
+							'email' => 'Please enter a valid email address.',
+							'url' => 'Please enter a valid URL.',
+							'date' => 'Please enter a valid date.',
+							'dateISO' => 'Please enter a valid date (ISO).',
+							'dateDE' => 'Bitte geben Sie ein gŸltiges Datum ein.',
+							'number' => 'Please enter a valid number.',
+							'numberDE' => 'Bitte geben Sie eine Nummer ein.',
+							'digits' => 'Please enter only digits',
+							'creditcard' => 'Please enter a valid credit card number.',
+							'equalTo' => 'Please enter the same value again.',
+							'accept' => 'Please enter a value with a valid extension.',
+							'maxlength' => 'Please enter no more than {0} characters.',
+							'minlength' => 'Please enter at least {0} characters.',
+							'rangelength' => 'Please enter a value between {0} and {1} characters long.',
+							'range' => 'Please enter a value between {0} and {1}.',
+							'max' => 'Please enter a value less than or equal to {0}.',
+							'min' => 'Please enter a value greater than or equal to {0}.'
+						);
+	/**
+	 * List of values provided for validation (last call to Validator->validate())
+	 * @see Validator->validate()
+	 * @var String[] [field_name => value]
+	 */
 	protected $asValue = array();
 
+	/**
+	 * CSS-class attached to Validator->sErrorElement when calling Validator->showError().
+	 * Set using options in constructor
+	 * 
+	 * @see Validator->__construct()
+	 * @see Validator->showError()
+	 * @var String class name for CSS (default "error") 
+	 */
 	protected $sErrorClass = 'error';
+	/**
+	 * HTML element name to wrap error messages in when calling Validator->showError().
+	 * Set using options in constructor
+	 * 
+	 * @see Validator->__construct()
+	 * @see Validator->showError()
+	 * @var String HTML element name (default "label")
+	 */
 	protected $sErrorElement = 'label';
-	
-	
+	/**
+	 * List of messages collected for those fields where the value did not validate.
+	 * Messages are taken from the Validator->asErrorMessage
+	 * @var String[] [field_name => error_message]
+	 */
 	protected $asErrorMessage =  null;
 	/**
 	 * Function to call when validation fails, e.g.
@@ -21,8 +109,11 @@ class Validator {
 	 * 		header('Location: '.$_SERVER['HTTP_REFERER'].'?numError='.$oValidator->numberOfInvalids());
 	 * 		die('headered to form after validation fail.');
 	 * }
-	 * Part of the options provided to the constructor.
-	 * @param String Name of the callable function.
+	 * (Optional) part of the options provided to the constructor.
+	 * 
+	 * @see Validator->__construct()
+	 * @see Validator->validate()
+	 * @param Callable (String) Name of the callable function.
 	 */
 	protected $sInvalidHandler = null;
 	
@@ -74,6 +165,10 @@ class Validator {
 	 * Whereas the javascript can detect classnames and element-id, the php version
 	 * obvious cannot. To integrate client and server as described, make sure all keys
 	 * in the array refer to element-names, as these are the keys of the POST/GET array. 
+	 * 
+	 * Also available:
+	 * 	errorClass: CSS class to put on errorElement when showing the error message in a form (default "error")
+	 * 	errorElement: HTML element name to wrap the error message in (default "label")
 	 */
 	public function __construct(array $asOption = null){
 		if (false === is_null($asOption)){
@@ -277,6 +372,7 @@ class Validator {
  * Contains all validation methods/rules
  *
  * @package validator
+ * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
  */
 class ValidatorMethodCollection extends ArrayObject {
 	/**
@@ -286,6 +382,7 @@ class ValidatorMethodCollection extends ArrayObject {
 	 * be validated, the second is an [optional] configuration parameters specified when 
 	 * adding rules to a class of fields (actually: a list of fields)
 	 * 
+ 	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
 	 * @param String $sName name of the rule to be called
 	 * @param String[] $asParam array containing the value of the field of to be validated and an array of options
 	 */
@@ -305,17 +402,47 @@ class ValidatorMethodCollection extends ArrayObject {
 	 * No sanity checks, only the format must be valid, not the actual date, eg 39/39/2008 
 	 * is a valid date. Month/day values may range from 00 to 39 due to the order of these 
 	 * fields used by different locales.
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @param String $sSeparator (Optional) day/month/year separator, defaults to '/'
+	 * @return bool Is the provided value a valid date
 	 */
 	public function date($sValue, $sSeparator = '/'){
 		return preg_match('~[0-3][0-9]'.$sSeparator.'[0-3][0-9]'.$sSeparator.'[0-9]{4}~', $sValue) === 1;
 	}
+	/**
+	 * Is the value composed solely of digits? \
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @return bool Is the provided value valid 
+	 */
 	public function digits($sValue){
 		return preg_match('~^[0-9]+$~', $sValue) === 1;
 	}
 
+	/**
+	 * Is the value an email address.
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @return bool Is the provided value a valid email address
+	 */
 	public function email($sValue, $mOption){
 		return preg_match('/^[a-z0-9!#$%&*+=?^_`{|}~-]+(\.[a-z0-9!#$%&*+-=?^_`{|}~]+)*@([-a-z0-9]+\.)+([a-z]{2,3}|info|arpa|aero|coop|name|museum)$/i', $sValue) === 1; 
 	}
+	
+	/**
+	 * Is the provided value equal to some other value.
+	 * This other value must be accessible in the $_POST array, so if you want to use the equalTo validation,
+	 * POST your forms. 
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @param String $sEqualTo Name of field this value should equal
+	 * @return bool Is the provided value a valid 
+	 */
 	public function equalTo($sValue, $sEqualTo){
 		if ($sEqualTo{0} === '#'){
 			$sEqualTo = substr($sEqualTo, 1);
@@ -324,25 +451,50 @@ class ValidatorMethodCollection extends ArrayObject {
 	}
 	/**
 	 * "Makes the element require a given maximum."
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param float $fValue value to validate
+	 * @param float $fMax Maximum value of the provided value
+	 * @return bool Is the provided value a valid 
 	 */
-	public function max($sValue, $iMax){
-		return is_numeric($sValue) && $sValue >= $iMax;
+	public function max($fValue, $fMax){
+		return is_numeric($fValue) && $fValue >= $fMax;
 	}
+	/**
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @param int $iLength the maximal length of the provided String
+	 * @return bool Is the provided value a valid 
+	 */
 	public function maxlength($sValue, $iLength){
 		return isset($sValue{$iLength}) === false;
 	}
+	/**
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @return bool Is the provided value a valid 
+	 */
 	public function minlength($sValue, $iLength){
 		return isset($sValue{--$iLength}); # pre-decrement: zero-indexed char-array
 	}
 	/**
 	 * "Makes the element require a given minimum."
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @return bool Is the provided value a valid 
 	 */
 	public function min($sValue, $iMin){
 		return is_numeric($sValue) && $sValue <= $iMin;
 	}
 	/**
 	 * Makes the element require a given value range.
-	 * @return bool
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @return bool Is the provided value a valid 
 	 */
 	public function range($sValue, array $asRange){
 		return $this->rangelength(intval($sValue), $asRange);
@@ -358,6 +510,10 @@ class ValidatorMethodCollection extends ArrayObject {
 	 * Works on checkboxes/multi-selects when they are provided as arrays, i.e.:
 	 * 	<input type="checkbox" name="asChecker[]" value="1" />
 	 * 	<input type="checkbox" name="asChecker[]" value="2" />
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @return bool Is the provided value a valid 
 	 */
 	public function rangelength($sValue, array $asRange){
 		# checkbox, multi-select (iff provided as array)
@@ -390,6 +546,10 @@ class ValidatorMethodCollection extends ArrayObject {
 	 * 3) a function argument:
 	 * 		The field is only required when the provided function returns false, no arguments will be presented.
 	 * 			"Makes the element required, depending on the result of the given callback."
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @return bool Is the provided value a valid 
 	 */
 	public function required($sValue, $mParam = null){
 		if (false === is_null($mParam)){
@@ -412,6 +572,12 @@ class ValidatorMethodCollection extends ArrayObject {
 		return false === empty($sTrimmedValue);
 	}
 	
+	/**
+	 * 
+	 * @author G.J.C. van Ahee <van.ahee@yes2web.nl>
+	 * @param String $sValue value to validate
+	 * @return bool Is the provided value a valid 
+	 */
 	public function url($sValue){
 # TODO: insert URL regex
 		return preg_match('/^[a-z0-9!#$%&*+-=?^_`{|}~]+(\.[a-z0-9!#$%&*+-=?^_`{|}~]+)*@([-a-z0-9]+\.)+([a-z]{2,3}|info|arpa|aero|coop|name|museum)$/i', $sValue) === 1; 
