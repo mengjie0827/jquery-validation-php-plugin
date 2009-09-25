@@ -5,4 +5,4 @@
   * Upload to Google Code
 
 == 0.1==
-Initial
+  * Initial
