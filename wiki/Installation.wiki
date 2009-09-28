@@ -2,6 +2,6 @@
 
 = Installation =
 
-Installation is easy: Copy the class to a convenient place and include it from your script. Define the rules and messages using an array and initiate the class. Validate the $_POST array and it will return error messages when found.
+Installation is easy: Copy the class to a convenient place and include it from your script. Define the rules and messages using an array and initiate the class. Validate the {{{$_POST}}} array and it will return error messages when found.
 
 = Details =
