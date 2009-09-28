@@ -2,12 +2,6 @@
 
 = Installation =
 
-Add your content here.
-
+Installation is easy: Copy the class to a convenient place and include it from your script. Define the rules and messages using an array and initiate the class. Validate the $_POST array and it will return error messages when found.
 
 = Details =
-
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
