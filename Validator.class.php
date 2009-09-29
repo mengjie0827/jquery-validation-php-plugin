@@ -246,7 +246,7 @@ class Validator {
 	 * @return String Provided value if it is valid
 	 */
 	public function showValid($sField){
-		return 	false === isset($this->asErrorMessage[$sField]) &&
+		return	$this->valid($sField) &&
 				isset($this->asValue[$sField])? 
 					$this->asValue[$sField]:'';
 	}
@@ -254,15 +254,19 @@ class Validator {
 	/**
 	 * Checks if the selected form is valid or if all selected elements are valid.
 	 * Throws Exception when no call to validate() has been made.
+	 * 
+	 * @param String $sField Optional parameter allowing to check the validity of a single field
 	 * @return bool were the values valid 
 	 * @throws Exception when no call to validate() has been made.
 	 */
-	public function valid(){
-//	don't require validation first?
-//		if (is_null($this->asErrorMessage)){
-//			throw new Exception('Call to valid() without having validated any values');
-//		}
-		return is_null($this->asErrorMessage) || count($this->asErrorMessage) === 0;
+	public function valid($sField = null){
+		return 
+			is_null($this->asErrorMessage) || 						# not validated
+			count($this->asErrorMessage) === 0 || 					# no errors
+			(														# there are errors: can now only return true when
+				false === is_null($sField) &&  						# - specific field is requested  
+				false === isset($this->asErrorMessage[$sField])		# -	and no error for this field
+			); 
 	}
 	
 	/**
@@ -447,18 +451,21 @@ class ValidatorMethodCollection extends ArrayObject {
 	 */
 	public function required($sValue, $mParam = null){
 		if (false === is_null($mParam)){
+			# function provided: only required when function returns false (check beor is_string, as callable is also a String)
+			if (is_callable($mParam)){	# custom required function 
+				# special if, otherwise the next case will be used (as $mParam is also a String)
+				if ($mParam() === false){ 	# iff true, it IS required ...
+					return true;			# ... so in this case: it's not
+				}
+			}
 			# a selector pointing to a specific checkbox-element: only required when checked (i.e. in the POST-array)
-			if (is_string($mParam)){
+			elseif (is_string($mParam)){
 				$oJQuery = $this->parseJQuery($mParam);
 																		# NOT required iff:
 				if (false === isset($_POST[$oJQuery->sFieldname]) ||	# 	the field is not there (i.e. not checked)
 					false === empty($_POST[$oJQuery->sFieldname])){		# 	the field is empty (i.e. select/input)
 					return true;										# not required means valid!
 				}
-			}
-			# function provided: only required when function returns false
-			elseif (is_callable($mParam) && $mParam() === false){ 	# iff true, it IS required
-				return true;										# so in this case: it's not
 			}
 		} # no additional parameter: just be there
 		$sTrimmedValue = trim($sValue);
