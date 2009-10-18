@@ -19,18 +19,19 @@ function test($sFunction, $asValue){
 	
 	echo '
 	Testing method <strong>', $sFunction, '</strong>
-	<ul>';
+	<ol>';
 	
 	foreach ($asValue as $amContext){
 		$sThingy = '"'.format($amContext[0]).'" should '.($amContext[2]? '':'not ').'pass '.$sFunction;
 		if (false === is_null($amContext[1])){
 			$sThingy .= ' '.format($amContext[1]);
 		}
+		$bResult = $amContext[2] === $oValidatorCollection->{$sFunction}($amContext[0], $amContext[1]);
 		echo '
-		<li>', $sThingy, ': ', ($amContext[2] === $oValidatorCollection->{$sFunction}($amContext[0], $amContext[1])? 'pass':'FAIL'), '</li>';
+		<li>', $sThingy, ': ', ($bResult? 'pass':'FAIL'), '</li>';
 	}
 	echo '
-	</ul>';
+	</ol>';
 }
 
 function format($mVal){
@@ -43,23 +44,52 @@ function format($mVal){
 	return $mVal;
 }
 
-
-// 	private function parseJQuery($sSelector)
-//test('parseJQuery', array(	
-//		array('#password', null, true),
-//		array('testname', null, true),
-//		array('input.test_zonder-selected', null, true),
-//		array('test:unchecked', null, true),
-//		array('#test_id:selected', null, true),
-//		array('input.test-class[name="firstname"]', null, true),
-//		array('input[name=countrycode]:selected', null, true)
-//	)
-//);
-
 //	public function __call($sName, array $asParam)
 
 //	public function date($sValue, $sSeparator = '/')
+test('date', array(
+		array('39-39-2009', '-', true),
+		array('12-12-2009', null, false),
+		array('40-40-2009', '-', false),
+		array('-1-12-2009', '-', false),
+		array('2009/12/09', null, false),
+		array('2/1/2009', null, false)
+	)
+);
 //	public function email($sValue, $mOption)
+test('email', array(
+		# valids
+		array('email@domain.com', null, true),
+		array('firstname.lastname@domain.com', null, true),
+		array('email@subdomain.domain.com', null, true),
+		array('firstname+lastname@domain.com', null, true),
+//		array('email@123.123.123.123', null, true), #who cares?
+//		array('email@[123.123.123.123]', null, true), #who cares?
+//		array('"email"@domain.com', null, true), #who cares?
+		array('1234567890@domain.com', null, true),
+		array('email@domain-one.com', null, true),
+		array('_______@domain.com', null, true),
+		array('email@domain.name', null, true),
+		array('email@domain.com.au', null, true),
+		array('firstname-lastname@domain.com', null, true),
+		# invalids
+		array('plainaddress', null, false),
+		array('@domain.com', null, false),
+		array('Joe Smith <email@domain.com>', null, false),
+		array('email.domain.com', null, false),
+		array('email@domain@domain.com', null, false),
+		array('.email@domain.com', null, false),
+		array('email.@domain.com', null, false),
+//		array('email..email@domain.com', null, false), #who cares?
+		array('@domain.com', null, false),
+		array('email@domain.com (Joe Smith)', null, false),
+		array('email@domain', null, false),
+//		array('email@-domain.com', null, false), #who cares?
+//		array('email@domain.web', null, false), #who cares?
+		array('email@111.222.333.44444', null, false),
+		array('email@domain..com', null, false)
+	)
+);
 //	public function equalTo($sValue, $sEqualTo) # todo: test with post values
 //	public function max($sValue, $iMax)
 test('max', array(
@@ -136,4 +166,16 @@ test('required', array( # todo: test with post values
 	)
 );
 //	public function url($sValue)
+test('url', array(
+		array('http://www.slashdot.org', null, true),
+		array('http://www.slashdot.org:8080', null, true),
+		array('https://www.slashdot.org', null, true),
+		array('https://www.port.com:8080', null, true),
+		array('http://www.slashdot.org/test/', null, true),
+		array('http://double.topleveldomain.com.au', null, true),
+		array('http://no-subdomain.org', null, true),
+		array('http://yes.subdomain.org', null, true),
+		array('http://double.yes.subdomain.org', null, true)
+	)
+);
 ?>

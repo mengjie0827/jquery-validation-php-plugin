@@ -301,6 +301,46 @@ class Validator {
 class ValidatorMethodCollection extends ArrayObject {
 	const JQUERY_SELECTOR = '~^([a-z]*[.#])?([a-z0-9-_]+)(\[[a-z-]+="?([a-z0-9-_]+)"?\])?(:([a-z]+))?$~i';
 	
+	# regular expressions denoting various validation patters
+	# @see ValidatorMethodCollection::email
+	# @see ValidatorMethodCollection::url
+	# @see ValidatorMethodCollection::regex
+	const VALID_EMAIL = '/^[a-z0-9!#$%&*+=?^_`{|}~-]+(\.[a-z0-9!#$%&*+-=?^_`{|}~]+)*@([-a-z0-9]+\.)+([a-z]{2,3}|info|arpa|aero|coop|name|museum)$/i';
+	# taken from http://immike.net/blog/2007/04/06/5-regular-expressions-every-web-programmer-should-know/
+	const VALID_URL = '{
+  \\b
+  # Match the leading part (proto://hostname, or just hostname)
+  (
+    # http://, or https:// leading part
+    (https?)://[-\\w]+(\\.\\w[-\\w]*)+
+  |
+    # or, try to find a hostname with more specific sub-expression
+    (?i: [a-z0-9] (?:[-a-z0-9]*[a-z0-9])? \\. )+ # sub domains
+    # Now ending .com, etc. For these, require lowercase
+    (?-i: com\\b
+        | edu\\b
+        | biz\\b
+        | gov\\b
+        | in(?:t|fo)\\b # .int or .info
+        | mil\\b
+        | net\\b
+        | org\\b
+        | [a-z][a-z]\\.[a-z][a-z]\\b # two-letter country code
+    )
+  )
+  # Allow an optional port number
+  ( : \\d+ )?
+  # The rest of the URL is optional, and begins with /
+  (
+    /
+    # The rest are heuristics for what seems to work well
+    [^.!,?;"\'<>()\[\]\{\}\s\x7F-\\xFF]*
+    (
+      [.!,?]+ [^.!,?;"\'<>()\\[\\]\{\\}\s\\x7F-\\xFF]+
+    )*
+  )?
+}ix';
+	
 	/**
 	 * Parse "some" selectors.
 	 * 
@@ -367,14 +407,14 @@ class ValidatorMethodCollection extends ArrayObject {
 	 * fields used by different locales.
 	 */
 	public function date($sValue, $sSeparator = '/'){
-		return preg_match('~[0-3][0-9]'.$sSeparator.'[0-3][0-9]'.$sSeparator.'[0-9]{4}~', $sValue) === 1;
+		return preg_match('~^[0-3][0-9]'.$sSeparator.'[0-3][0-9]'.$sSeparator.'[0-9]{4}$~', $sValue) === 1;
 	}
 	public function digits($sValue){
 		return preg_match('~^[0-9]+$~', $sValue) === 1;
 	}
 
 	public function email($sValue, $mOption){
-		return preg_match('/^[a-z0-9!#$%&*+=?^_`{|}~-]+(\.[a-z0-9!#$%&*+-=?^_`{|}~]+)*@([-a-z0-9]+\.)+([a-z]{2,3}|info|arpa|aero|coop|name|museum)$/i', $sValue) === 1; 
+		return $this->regex($sValue, self::VALID_URL);
 	}
 	public function equalTo($sValue, $sEqualTo){
 		$sEqualTo = $this->parseJQuery($sEqualTo)->sFieldname;
@@ -434,6 +474,27 @@ class ValidatorMethodCollection extends ArrayObject {
 	}
 	
 	/**
+	 * Validate a value by a supplied regex. 
+	 * E.g. url and email use it to validate URLs and emails (respectively)
+	 * 
+	 * usage:
+	 * options: 
+	 * 	array( 
+	 * 		'rules' => array(
+	 * 			'name_to_be_regexed' => array(
+	 * 				'regex' => '~regexp?~'
+	 * 			) 
+	 * 		)
+	 *	)
+	 * @param String $sValue Value to validate
+	 * @param String $sRegex Regex to validate against
+	 * @return bool valid?
+	 */
+	public function regex($sValue, $sRegex){
+		return preg_match($sRegex, $sValue) == 1;
+	}
+	
+	/**
 	 * Required: 
 	 * [quotes taken from jquery validator docs: Validation > Methods > required]
 	 * 			"Return false if the element is empty (text input) or unchecked (radio/checkbxo) or nothing selected (select)."
@@ -473,8 +534,7 @@ class ValidatorMethodCollection extends ArrayObject {
 	}
 	
 	public function url($sValue){
-# TODO: insert URL regex
-		return preg_match('/^[a-z0-9!#$%&*+-=?^_`{|}~]+(\.[a-z0-9!#$%&*+-=?^_`{|}~]+)*@([-a-z0-9]+\.)+([a-z]{2,3}|info|arpa|aero|coop|name|museum)$/i', $sValue) === 1; 
+		return $this->regex($sValue, self::VALID_URL); 
 	}
 }
 ?>
