@@ -414,7 +414,7 @@ class ValidatorMethodCollection extends ArrayObject {
 	}
 
 	public function email($sValue, $mOption){
-		return $this->regex($sValue, self::VALID_URL);
+		return $this->regex($sValue, self::VALID_EMAIL);
 	}
 	public function equalTo($sValue, $sEqualTo){
 		$sEqualTo = $this->parseJQuery($sEqualTo)->sFieldname;
