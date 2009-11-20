@@ -424,7 +424,7 @@ class ValidatorMethodCollection extends ArrayObject {
 	 * "Makes the element require a given maximum."
 	 */
 	public function max($sValue, $iMax){
-		return is_numeric($sValue) && $sValue >= $iMax;
+		return is_numeric($sValue) && $sValue <= $iMax;
 	}
 	public function maxlength($sValue, $iLength){
 		return isset($sValue{$iLength}) === false;
@@ -436,7 +436,7 @@ class ValidatorMethodCollection extends ArrayObject {
 	 * "Makes the element require a given minimum."
 	 */
 	public function min($sValue, $iMin){
-		return is_numeric($sValue) && $sValue <= $iMin;
+		return is_numeric($sValue) && $sValue >= $iMin;
 	}
 	/**
 	 * Makes the element require a given value range.
