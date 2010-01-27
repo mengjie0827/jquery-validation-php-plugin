@@ -531,7 +531,7 @@ class ValidatorMethodCollection extends ArrayObject {
 				$oJQuery = $this->parseJQuery($mParam);
 																		# NOT required iff:
 				if (false === isset($_POST[$oJQuery->sFieldname]) ||	# 	the field is not there (i.e. not checked)
-					false === empty($_POST[$oJQuery->sFieldname])){		# 	the field is empty (i.e. select/input)
+					true === empty($_POST[$oJQuery->sFieldname])){		# 	the field is empty (i.e. select/input)
 					return true;										# not required means valid!
 				}
 			}
