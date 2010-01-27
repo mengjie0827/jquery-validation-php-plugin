@@ -442,6 +442,13 @@ class ValidatorMethodCollection extends ArrayObject {
 	 * Makes the element require a given value range.
 	 * @return bool
 	 */
+	public function number($mValue){
+		return is_numeric($mValue);
+	}
+	/**
+	 * Makes the element require a given value range.
+	 * @return bool
+	 */
 	public function range($sValue, array $asRange){
 		return $this->rangelength(intval($sValue), $asRange);
 	}
