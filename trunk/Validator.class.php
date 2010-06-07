@@ -157,11 +157,11 @@ class Validator {
 		if (isset($this->asClassRule[$sField])){
 			# apply all until one fails
 			foreach ($this->asClassRule[$sField] as $sRule => $asRuleParam){
-				if (false === (	# iff empty AND optional: don't check
+				if (false === (				# iff empty AND optional: don't check
 						empty($mValue) &&	# easier checked than next line
 						$this->optional($sField) 
 					) &&
-					false === $this->oMethodCollection->{$sRule}($mValue, $asRuleParam)){
+					false === $this->oMethodCollection->{$sRule}($mValue, $asRuleParam, $this->asValue)){
 					$this->asErrorMessage[$sField] = $this->getMessage($sField, $sRule, $asRuleParam);
 					return false; # validation failed
 				}
@@ -182,7 +182,7 @@ class Validator {
 	 * helper method to distill messages from the array of messages
 	 * @return String the message
 	 */
-	private function getMessage($sField, $sRule, $asRuleParam){
+	public function getMessage($sField, $sRule, $asRuleParam){
 		$sMessage = isset($this->asMessage[$sField]) &&
 					is_array($this->asMessage[$sField]) && 
 					isset($this->asMessage[$sField][$sRule])? 
@@ -282,8 +282,10 @@ class Validator {
 		# look for required fields that were not there  
 		foreach ($this->asClassRule as $sField => $asRules){
 			if (false === isset($asValue[$sField]) &&	# this field was not validatied, as it was not present in the list 
-				isset($asRules['required'])){ 			# But is was REQUIRED ! !
-				$this->asErrorMessage[$sField] = $this->getMessage($sField, 'required', $asRules['required']);
+				isset($asRules['required']) 			# But is was REQUIRED, though perhaps conditional, so test anyway
+			){ 			
+				$this->element($sField, '');
+//				$this->asErrorMessage[$sField] = $this->getMessage($sField, 'required', $asRules['required']);
 			}
 		}
 		if (is_callable($this->sInvalidHandler)){
@@ -416,9 +418,9 @@ class ValidatorMethodCollection extends ArrayObject {
 	public function email($sValue, $mOption){
 		return $this->regex($sValue, self::VALID_EMAIL);
 	}
-	public function equalTo($sValue, $sEqualTo){
+	public function equalTo($sValue, $sEqualTo, $asFullList){
 		$sEqualTo = $this->parseJQuery($sEqualTo)->sFieldname;
-		return strcmp($sValue, $_POST[$sEqualTo]) === 0;
+		return isset($asFullList[$sEqualTo]) && strcmp($sValue, $asFullList[$sEqualTo]) === 0;
 	}
 	/**
 	 * "Makes the element require a given maximum."
@@ -517,7 +519,7 @@ class ValidatorMethodCollection extends ArrayObject {
 	 * 		The field is only required when the provided function returns false, no arguments will be presented.
 	 * 			"Makes the element required, depending on the result of the given callback."
 	 */
-	public function required($sValue, $mParam = null){
+	public function required($sValue, $mParam = null, $asFullList = array()){
 		if (false === is_null($mParam)){
 			# function provided: only required when function returns false (check beor is_string, as callable is also a String)
 			if (is_callable($mParam)){	# custom required function 
@@ -530,14 +532,16 @@ class ValidatorMethodCollection extends ArrayObject {
 			elseif (is_string($mParam)){
 				$oJQuery = $this->parseJQuery($mParam);
 																		# NOT required iff:
-				if (false === isset($_POST[$oJQuery->sFieldname]) ||	# 	the field is not there (i.e. not checked)
-					true === empty($_POST[$oJQuery->sFieldname])){		# 	the field is empty (i.e. select/input)
+				if (false === isset($asFullList[$oJQuery->sFieldname]) ||	# 	the field is not there (i.e. not checked)
+					true === empty($asFullList[$oJQuery->sFieldname])){		# 	the field is empty (i.e. select/input)
 					return true;										# not required means valid!
 				}
 			}
 		} # no additional parameter: just be there
 		$sTrimmedValue = trim($sValue);
-		return false === empty($sTrimmedValue);
+		return 
+			false === empty($sTrimmedValue) ||
+			$sTrimmedValue === '0';
 	}
 	
 	public function url($sValue){
