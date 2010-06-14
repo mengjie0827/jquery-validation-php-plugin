@@ -524,8 +524,8 @@ class ValidatorMethodCollection extends ArrayObject {
 			# function provided: only required when function returns false (check beor is_string, as callable is also a String)
 			if (is_callable($mParam)){	# custom required function 
 				# special if, otherwise the next case will be used (as $mParam is also a String)
-				if ($mParam() === false){ 	# iff true, it IS required ...
-					return true;			# ... so in this case: it's not
+				if ($mParam($sValue, $asFullList) === false){ 	# iff true, it IS required ...
+					return true;								# ... so in this case: it's not so it's valid
 				}
 			}
 			# a selector pointing to a specific checkbox-element: only required when checked (i.e. in the POST-array)
